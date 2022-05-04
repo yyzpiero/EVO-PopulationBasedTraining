@@ -1,19 +1,19 @@
 # EVO: Population-Based Training (PBT) for Reinforcement Learning using MPI 
 ## Overview
 
-Population Based Training is a novel approach to hyperparameter optimisation by jointly optimising a population of models and their hyperparameters to maximise performance. PBT takes its inspiration from genetic algorithms where each member of the population can exploit information from the remainder of the population.
+Population-Based Training is a novel approach to hyperparameter optimisation by jointly optimising a population of models and their hyperparameters to maximise performance. PBT takes its inspiration from genetic algorithms where each member of the population can exploit information from the remainder of the population.
 
 
 
 <p>
-    <img src="https://i.imgur.com/hvfgzyf.png" alt="PBT Illustration" style="zoom:50%;" />
+    <img src="https://i.imgur.com/hvfgzyf.png" alt="PBT Illustration" style="zoom:30%;" />
 </p>
 <p>
     <em>Illustration of PBT training process (Liebig, Jan Frederik, Evaluating Population based Reinforcement Learning for Transfer Learning, 2021)</em>
 </p>
 
 
-To extend the population of agents to extrem scale using High Performce Computer, this repo, namely **EVO** provide a PBT implementation for RL using Message Passing Interface. 
+To extend the population of agents to extreme-scale using High-Performance Computer, this repo, namely **EVO** provide a PBT implementation for RL using Message Passing Interface. 
 
 ## MPI (Message Passing Interface) and mpi4py
 
@@ -37,7 +37,7 @@ Clone the repo:
 git clone https://github.com/yyzpiero/evo.git
 ```
 
-Create conda environment:
+Create `conda` environment:
 ```
 conda create -p ./venv
 ```
@@ -58,11 +58,11 @@ or
 poetry add mpi4py
 ```
 
-As using Conda install may lead to some unknown issues.
+Using Conda install may lead to some unknown issues.
 
 
 ### Basic Usage
-Activate conda environment:
+Activate `conda` environment:
 ```
 conda activate ./venv
 ```
@@ -109,9 +109,9 @@ A simply selection mechanism, that for each generation, only the best-performed 
 
 ### Truncation selection
 
-> It the default selection strategy in [PBT paper](https://arxiv.org/abs/1711.09846) for RL training, and is widely used other PBT-based methods.
+> It is the default selection strategy in [PBT paper](https://arxiv.org/abs/1711.09846) for RL training, and is widely used in other PBT-based methods.
 
-All agents in the entire population are ranked by their episodic rewards. It the a agent is in the bottom $25\%$ of the entire population, another agent from the top $25\%$ is sampled and its NN parameters and hyperparameters are copied to the current agent.  **Different <u>MPI communication methods</u>[^note] are implementated.**
+All agents in the entire population are ranked by their episodic rewards. If the agent is in the bottom $25\%$ of the entire population, another agent from the top $25\%$ is sampled and its NN parameters and hyperparameters are copied to the current agent.  **Different <u>MPI communication methods</u>[^note] are implemented.**
 
 #### Implemented Variants
 
@@ -120,9 +120,9 @@ All agents in the entire population are ranked by their episodic rewards. It the
 |   `pbt_rl_truct.py`       | implementation using point-2-point communications via `send` and `recv`. |
 |     `pbt_rl_truct_collective.py`     | implementation using collective communications.              |
 
-For small cluster with limited number of nodes, we suggest point-2-point method, which is more faster than collective method. However, for large HPC cluster, collective method is much more faster and robust.
+For small clusters with a limited number of nodes, we suggest the point-2-point method, which is faster than the collective method. However, for large HPC clusters, the collective method is much faster and more robust.
 
-[^note]: [This article](https://www.futurelearn.com/info/courses/python-in-hpc/0/steps/65143) briefly intorduces the difference between point-2-point communcations and collective communicatiosn in MPI.
+[^note]: [This article](https://www.futurelearn.com/info/courses/python-in-hpc/0/steps/65143) briefly introduces the difference between point-2-point communications and collective communications in MPI.
 
 ## Benchmarks
 
@@ -144,7 +144,7 @@ Results of the experiments are presented on the Figure below:
 
 **Some key observations:**
 
-- By using PBT to train PPO agent can acheive better results than SAC (single agent)
+- By using PBT to train PPO agents can achieve better results than a SAC agent(single agent)
 
   - Note: SAC should outperforms PPO (see [OpenRL](https://wandb.ai/cleanrl/cleanrl.benchmark/reports/Open-RL-Benchmark-0-6-0---Vmlldzo0MDcxOA)) in most *PyBullet* environments
 
