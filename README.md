@@ -131,7 +131,13 @@ We used continuous control `AntBulletEnv-v0` scenario in [PyBullet environments]
 Results of the experiments are presented on the Figure below:
 
 
+<p>
+    <img src="https://i.imgur.com/Mi5Giit.png" alt="Benchmark Results" style="zoom:50%;" />
+</p>
 
+<p>
+    <em>Left Figure: Reward per generation using PBT | Right Figure: Reward per step using single SB3 agent</em>
+</p>
 
 
 
@@ -147,4 +153,3 @@ Results of the experiments are presented on the Figure below:
 
 ## Acknowledgements
 This repo is inspired by [graf](https://github.com/PytLab/gaft), [angusfung's population based training repo](https://github.com/angusfung/population-based-training). 
-
