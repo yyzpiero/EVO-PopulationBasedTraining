@@ -1,4 +1,6 @@
 # EVO: Population-Based Training (PBT) for Reinforcement Learning using MPI 
+
+![logo](./logo.eps)
 ## Overview
 
 Population-Based Training is a novel approach to hyperparameter optimisation by jointly optimising a population of models and their hyperparameters to maximise performance. PBT takes its inspiration from genetic algorithms where each member of the population can exploit information from the remainder of the population.
