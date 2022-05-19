@@ -41,7 +41,7 @@ git clone https://github.com/yyzpiero/evo.git
 
 Create `conda` environment:
 ```
-conda create -p ./venv
+conda create -p ./venv python==X.X
 ```
 and use poetry to install all Python packages:
 
