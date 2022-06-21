@@ -6,6 +6,10 @@ from distutils.util import strtobool
 from mpi_utils import MPI_Tool
 from stable_baselines3.common.evaluation import evaluate_policy
 from utils.rl_tools import env_create_sb, env_create, eval_agent
+from stable_baselines3.common.env_util import make_vec_env
+
+# Parallel environments
+
 # from pbt_toy import pbt_engine
 from mpi4py import MPI
 from stable_baselines3 import PPO as PPO_SB
@@ -28,6 +32,8 @@ def parse_args():
         help="seed of the experiment")
     parser.add_argument("--num-agents", type=int, default=20,
         help="number of agents")
+    parser.add_argument("--num-envs", type=int, default=8,
+        help="number of envs per agent")
     parser.add_argument("--total-generations", type=int, default=20,
         help="total generations of the experiments")
     parser.add_argument("--agent-training-steps", type=int, default=10000,
@@ -55,21 +61,23 @@ class rl_agent():
             #self.model =  PPO("MlpPolicy", env=self.env, verbose=0, create_eval_env=False)
             #self.model =  PPO(envs=env_name, device='cpu', num_envs=8, verbose=0)
             if self.use_sb:
-                self.env = env_create(env_name, idx)
+                #self.env = env_create(env_name, idx)
+                self.env = make_vec_env(env_name, n_envs=4)
                 self.model = PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=False)
                 print("=="*10+"Stable-Baselines3 Agents"+"=="*10)
             else:
-                self.model = PPO(envs=env_name, device='cpu', num_envs=1, verbose=0)
+                self.model = PPO(envs=env_name, device='cpu', num_envs=8, verbose=0)
                 print("=="*10+"EVO Agents"+"=="*10)
         elif env_name[0:5] == "nasim":
             #self.env = env_create(env_name, idx)
             #self.env = env_create_sb(env_id=env_name, n_envs=8)
             #self.model =  PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=False)
             if self.use_sb:
-                self.env = env_create(env_name, idx)
-                self.model =  PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=False)
+                #self.env = env_create(env_name, idx)
+                self.env = make_vec_env(env_name, n_envs=4)
+                self.model =  PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=True)
             else:
-                self.model = PPO(envs=env_name, device='cpu', num_envs=1, verbose=0)
+                self.model = PPO(envs=env_name, device='cpu', num_envs=4, verbose=0)
         elif env_name[0:6] == "dm2gym":
             self.env = env_create(env_name, idx)
             self.model = PPO("MultiInputPolicy", env=self.env, verbose=0, create_eval_env=True)
@@ -181,7 +189,6 @@ class base_population(object):
         _best_id = self.get_best_agent()
         return self.agents_pool[_best_id].score
     
-
     def get_best_results(self):
         # return max(self.get_scores())
         _best_id = self.get_best_agent()
@@ -200,13 +207,13 @@ class base_population(object):
 
 
 class base_engine(object):
-    def __init__(self, total_population_size, tb_logger=False):
+    def __init__(self, total_population_size, tb_logger=None):
         self.total_population_size = total_population_size
         self.best_score_population = 0
-        if mpi_tool.is_master & (tb_logger):
-            self.tb_writer = SummaryWriter()
+        if mpi_tool.is_master & (tb_logger is not None):
+            self.tb_writer = tb_logger
         else:
-            self.tb_writer = False
+            self.tb_writer = None
 
     def create_local(self, pbt_population):
         if pbt_population.size == 0:
@@ -222,7 +229,7 @@ class base_engine(object):
             print("Agents number: {} at rank {} on node {}".format(self.population.size, mpi_tool.rank, str(mpi_tool.node)))
         
         for i in range(steps):
-
+            since = time.time()
             if mpi_tool.is_master:
                 # Master is the centre controll, with no RL agent
                 top=round(self.total_population_size*0.25)
@@ -316,7 +323,7 @@ class base_engine(object):
                 # if return_episode_rewards:
                 #     self.best_length_population = rec_best_length
                 # self.best_params_population = best_params_population
-                
+                print("One Generation Time: {}".format(time.time()-since))
                 if (i+1) % 1 == 0 and i!=0:
                     if self.tb_writer:
                         self.tb_writer.add_scalar('Score/PBT_Results', self.best_score_population, i)
@@ -334,8 +341,21 @@ def main():
     args = parse_args()
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
     workers = workers_init(args)
-    writer = args.track
+    #writer = args.track
     
+    if args.track:
+        writer = SummaryWriter(f"runs/{run_name}")
+        writer.add_text(
+        "hyperparameters",
+        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
+        )
+    else:
+        writer = None
+
+
+
+
+
     num_generations = args.total_generations
     agent_training_steps = args.agent_training_steps
 
