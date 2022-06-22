@@ -15,8 +15,8 @@ TRACK=$4
 
 now="$(date +"%I:%M")"
 export now=${now}
-agent_training_steps=20000
-total_generations=50
+agent_training_steps=250000
+total_generations=40
 EXEC_PATH=$(pwd)
 
 if [[ ! -e ${EXEC_PATH}/${LOG_PATH}/${ENV_ID} ]]; then
@@ -24,5 +24,11 @@ if [[ ! -e ${EXEC_PATH}/${LOG_PATH}/${ENV_ID} ]]; then
 fi
 
 nohup mpirun -n ${RANK_NUM} --bind-to none python /home/yangyz/yangyz/codes/evo-clearn-ppo/pbt_rl_toy_trunt.py \
+--env-id ${ENV_ID} --num-agents ${RANK_NUM} --track ${TRACK}  --total-generations ${total_generations} --use-sb False --agent-training-steps ${agent_training_steps} \
+>${EXEC_PATH}/${LOG_PATH}/${ENV_ID}/EVO_num_agent_${RANK_NUM}_gen_${total_generations}_num_step_${agent_training_steps}_${now}.out 2>&1 & 
+
+wait 
+
+nohup mpirun -n ${RANK_NUM} --bind-to none python /home/yangyz/yangyz/codes/evo-clearn-ppo/pbt_rl_toy_trunt.py \
 --env-id ${ENV_ID} --num-agents ${RANK_NUM} --track ${TRACK}  --total-generations ${total_generations} --use-sb True --agent-training-steps ${agent_training_steps} \
->${EXEC_PATH}/${LOG_PATH}/${ENV_ID}/num_agent_${RANK_NUM}_gen_${total_generations}_num_step_${agent_training_steps}_${now}.out 2>&1 &
+>${EXEC_PATH}/${LOG_PATH}/${ENV_ID}/SB_num_agent_${RANK_NUM}_gen_${total_generations}_num_step_${agent_training_steps}_${now}.out 2>&1 &

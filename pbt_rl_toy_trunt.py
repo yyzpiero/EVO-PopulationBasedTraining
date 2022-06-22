@@ -32,7 +32,7 @@ def parse_args():
         help="seed of the experiment")
     parser.add_argument("--num-agents", type=int, default=20,
         help="number of agents")
-    parser.add_argument("--num-envs", type=int, default=8,
+    parser.add_argument("--num-envs", type=int, default=16,
         help="number of envs per agent")
     parser.add_argument("--total-generations", type=int, default=20,
         help="total generations of the experiments")
@@ -77,8 +77,8 @@ class rl_agent():
                 self.env = make_vec_env(env_name, n_envs=num_envs)
                 self.model =  PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=False)
             else:
-                self.env = make_vec_env(env_name, n_envs=num_envs)
-                self.model = PPO(envs=self.env, device='cpu', num_envs=num_envs, verbose=0, create_eval_env=True)
+                #self.env = make_vec_env(env_name, n_envs=num_envs)
+                self.model = PPO(envs=env_name, device='cpu', num_envs=num_envs, verbose=0, create_eval_env=True)
         elif env_name[0:6] == "dm2gym":
             self.env = env_create(env_name, idx)
             self.model = PPO("MultiInputPolicy", env=self.env, verbose=0, create_eval_env=True)
@@ -127,7 +127,7 @@ class rl_agent():
         if vanilla:
             if return_episode_rewards == True:
                 if self.use_sb == True:
-                    eps_reward, eps_length = evaluate_policy(self.model, self.model.get_env(), n_eval_episodes=10, return_episode_rewards=True)
+                    eps_reward, eps_length = evaluate_policy(self.model, self.model.get_env(), n_eval_episodes=10, return_episode_rewards=True, deterministic=False)
                     eps_reward = np.mean(eps_reward)
                     eps_length = np.mean(eps_length)
                 else:
@@ -329,6 +329,7 @@ class base_engine(object):
                 if (i+1) % 1 == 0 and i!=0:
                     if self.tb_writer is not None:
                         self.tb_writer.add_scalar('Score/PBT_Results', self.best_score_population, i)
+                        self.tb_writer.add_scalar('Score/Training_Time_Per_Generation', time.time()-since, i)
                     if return_episode_rewards:
                         if self.tb_writer is not None:
                             self.tb_writer.add_scalar('Length/PBT_Results', self.best_episode_length_population, i)
@@ -341,7 +342,7 @@ class base_engine(object):
 def main():
 
     args = parse_args()
-    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    run_name = f"{args.use_sb}_{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
     workers = workers_init(args)
     #writer = args.track
     

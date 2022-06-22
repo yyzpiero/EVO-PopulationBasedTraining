@@ -79,7 +79,7 @@ class PPO():
 
         if create_eval_env:
             if isinstance(envs, str):
-                self.eval_env = make_eval_env(env_name=envs, seed=seed)
+                self.eval_env = copy.deepcopy(make_eval_env(env_name=envs, seed=seed).unwrapped.envs[0])
             else:
                 self.eval_env = copy.deepcopy(self.envs.unwrapped.envs[0])
         else:

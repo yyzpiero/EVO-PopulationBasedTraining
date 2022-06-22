@@ -28,7 +28,7 @@ def parse_args():
     #     help="weather to capture videos of the agent performances (check out `videos` folder)")
 
     # Algorithm specific arguments
-    parser.add_argument("--env-id", type=str, default="nasim:Medium-v0",
+    parser.add_argument("--env-id", type=str, default="nasim:HugeGen-v0",
         help="the id of the environment")
     parser.add_argument("--num-envs", type=int, default=5,
         help="the number of parallel game environments")
@@ -44,7 +44,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
     envs = make_vec_envs(args.env_id, args.seed, args.num_envs, args.gamma)
 
-    model = PPO(envs=envs, device=device, num_envs=args.num_envs, verbose=1)
+    model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)
     #model.train(15000)
     #model.eval(num_eval_episodes=2)
     #params = model.get_parameters()
