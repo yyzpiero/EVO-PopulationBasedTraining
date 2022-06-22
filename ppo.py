@@ -6,10 +6,15 @@ import torch
 import torch.nn as nn
 from typing import Any, Dict, Union, Tuple, List
 from stable_baselines3.common.save_util import load_from_zip_file
+from stable_baselines3.common.vec_env import VecEnvWrapper, DummyVecEnv, VecEnv, VecTransposeImage
 from helper import recursive_getattr
 from collections import deque
-from envs import make_eval_env, make_vec_envs, wrap_env
+from envs import make_eval_env, make_vec_envs, wrap_env, get_vec_normalize, sync_envs_normalization, VecPyTorch, VecNormalize
 import time
+import gym
+import warnings
+
+import copy
 
 class PPO():
     def __init__(self, 
@@ -67,8 +72,16 @@ class PPO():
         else:
             self.envs = envs
         
+        if isinstance(self.envs, VecEnv):
+            self.obs_rms = get_vec_normalize(self.envs).obs_rms
+        else:
+            self.obs_rms = None
+
         if create_eval_env:
-            self.eval_env = make_eval_env(env_name=envs, seed=seed)
+            if isinstance(envs, str):
+                self.eval_env = make_eval_env(env_name=envs, seed=seed)
+            else:
+                self.eval_env = copy.deepcopy(self.envs.unwrapped.envs[0])
         else:
             self.eval_env = None
         
@@ -208,25 +221,25 @@ class PPO():
         :return:
         """
         if eval_env is None:
-            eval_env = self.eval_env
+            return wrap_env(self.eval_env)
 
         if eval_env is not None:
             eval_env = wrap_env(eval_env, self.verbose)
             assert eval_env.num_envs == 1
-        return eval_env
+            return eval_env
     
     def act(self, obs):
         if isinstance(obs, np.ndarray):
             obs = torch.Tensor(obs).to(self.device)
         return self.agent.act(obs)
 
-    def eval(self, num_eval_episodes=5, eval_envs=None):
+    def eval(self, obs_rms=None, num_eval_episodes=5, eval_envs=None):
         
-        eval_envs = self._get_eval_env(eval_envs)
+        eval_envs = VecPyTorch(VecNormalize(self._get_eval_env(eval_env=eval_envs)), 'cpu')
+        sync_envs_normalization(self.envs, eval_envs)
+        #eval_envs = gym.make('CartPole-v0')
+        #eval_envs.seed(23222)
         assert eval_envs is not None
-        # if vec_norm is not None:
-        #     vec_norm.eval()
-        #     vec_norm.obs_rms = obs_rms
 
         eval_episode_rewards = []
         eval_episode_length = []
@@ -240,18 +253,30 @@ class PPO():
             obs = eval_envs.reset()
             #print(obs)
             done = False
-    
+            episode_rewards = []
+            episode_length = 0
             while not done:
                 with torch.no_grad():
                     action = self.act(obs).cpu().numpy()
                 #action = int(np.random.randint(low=0, high=env.action_space.n))
                 obs, reward, done, infos = eval_envs.step(action)
-    
+                episode_rewards.append(reward)
+                episode_length += 1
+                
                 if done:
-                    for info in infos:
-                        if 'episode' in info.keys():
-                            eval_episode_rewards.append(info['episode']['r'])
-                            eval_episode_length.append(info['episode']['l'])
+                    if isinstance(infos, List):
+                        for info in infos:
+                            if 'episode' in info.keys():
+                                eval_episode_rewards.append(info['episode']['r'])
+                                eval_episode_length.append(info['episode']['l'])   
+                    #for info in infos:
+                    else:
+                        if 'episode' in infos.keys():
+                            eval_episode_rewards.append(infos['episode']['r'])
+                            eval_episode_length.append(infos['episode']['l'])
+                        else:
+                            eval_episode_rewards.append(np.sum(episode_rewards))
+                            eval_episode_length.append(episode_length)    
 
         eval_envs.close()
         if self.verbose:

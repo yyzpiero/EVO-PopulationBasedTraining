@@ -50,7 +50,7 @@ def parse_args():
     return args
 
 class rl_agent():
-    def __init__(self, idx, env_name, learning_rate, gamma, use_sb=False, log_dir = "./tmp/gym/", seed=141) -> None:
+    def __init__(self, idx, env_name, learning_rate, gamma, num_envs=1, use_sb=False, log_dir = "./tmp/gym/", seed=141) -> None:
         self.idx = idx
         self.seed = seed
         self.use_sb = use_sb
@@ -62,11 +62,11 @@ class rl_agent():
             #self.model =  PPO(envs=env_name, device='cpu', num_envs=8, verbose=0)
             if self.use_sb:
                 #self.env = env_create(env_name, idx)
-                self.env = make_vec_env(env_name, n_envs=4)
+                self.env = make_vec_env(env_name, n_envs=num_envs)
                 self.model = PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=False)
                 print("=="*10+"Stable-Baselines3 Agents"+"=="*10)
             else:
-                self.model = PPO(envs=env_name, device='cpu', num_envs=8, verbose=0)
+                self.model = PPO(envs=env_name, device='cpu', num_envs=num_envs, verbose=0)
                 print("=="*10+"EVO Agents"+"=="*10)
         elif env_name[0:5] == "nasim":
             #self.env = env_create(env_name, idx)
@@ -74,10 +74,11 @@ class rl_agent():
             #self.model =  PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=False)
             if self.use_sb:
                 #self.env = env_create(env_name, idx)
-                self.env = make_vec_env(env_name, n_envs=4)
-                self.model =  PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=True)
+                self.env = make_vec_env(env_name, n_envs=num_envs)
+                self.model =  PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=False)
             else:
-                self.model = PPO(envs=env_name, device='cpu', num_envs=4, verbose=0)
+                self.env = make_vec_env(env_name, n_envs=num_envs)
+                self.model = PPO(envs=self.env, device='cpu', num_envs=num_envs, verbose=0, create_eval_env=True)
         elif env_name[0:6] == "dm2gym":
             self.env = env_create(env_name, idx)
             self.model = PPO("MultiInputPolicy", env=self.env, verbose=0, create_eval_env=True)
@@ -167,7 +168,7 @@ def workers_init(args):
         else:
             raise Exception('Error in Gamma Range: Low bound shoud less that the Upper bound')
         
-        workers.append(rl_agent(idx=idx, env_name=args.env_id, learning_rate=_lr, gamma=_g, use_sb=args.use_sb)) 
+        workers.append(rl_agent(idx=idx, env_name=args.env_id, learning_rate=_lr, gamma=_g, use_sb=args.use_sb, num_envs=args.num_envs)) 
     return workers
 
 class base_population(object):
@@ -212,6 +213,7 @@ class base_engine(object):
         self.best_score_population = 0
         if mpi_tool.is_master & (tb_logger is not None):
             self.tb_writer = tb_logger
+            #print(self.tb_writer)
         else:
             self.tb_writer = None
 
@@ -325,12 +327,12 @@ class base_engine(object):
                 # self.best_params_population = best_params_population
                 print("One Generation Time: {}".format(time.time()-since))
                 if (i+1) % 1 == 0 and i!=0:
-                    if self.tb_writer:
+                    if self.tb_writer is not None:
                         self.tb_writer.add_scalar('Score/PBT_Results', self.best_score_population, i)
                     if return_episode_rewards:
-                        if self.tb_writer:
+                        if self.tb_writer is not None:
                             self.tb_writer.add_scalar('Length/PBT_Results', self.best_episode_length_population, i)
-                        time.sleep(2.4)
+                        #time.sleep(2.4)
                         print("At itre {} the Best Pop Score is {} Best Length is {} on rank {}".format(i, self.best_score_population, self.best_episode_length_population, self.best_rank ))
                     else:
                         print("At itre {} the Best Pop Score is {} on rank {}".format(i, self.best_score_population, self.best_rank))

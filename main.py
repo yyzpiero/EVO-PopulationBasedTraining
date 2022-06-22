@@ -30,7 +30,7 @@ def parse_args():
     # Algorithm specific arguments
     parser.add_argument("--env-id", type=str, default="nasim:Medium-v0",
         help="the id of the environment")
-    parser.add_argument("--num-envs", type=int, default=3,
+    parser.add_argument("--num-envs", type=int, default=5,
         help="the number of parallel game environments")
     parser.add_argument("--no-obs-norm",type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="normali")
@@ -42,15 +42,14 @@ def parse_args():
 def main():
     args = parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
-    #envs = make_vec_envs(args.env_id, args.seed, args.num_envs,
-    #                        args.gamma, args.log_dir, device, False, no_obs_norm=args.no_obs_norm)
+    envs = make_vec_envs(args.env_id, args.seed, args.num_envs, args.gamma)
 
-    model = PPO(envs="nasim:Medium-v0", device=device, num_envs=8, verbose=1)
+    model = PPO(envs=envs, device=device, num_envs=args.num_envs, verbose=1)
     #model.train(15000)
     #model.eval(num_eval_episodes=2)
     #params = model.get_parameters()
     #model.set_parameters(params)
-    model.train(100000)
+    model.train(50000)
     model.eval(num_eval_episodes=10)
 
 if __name__ == '__main__':

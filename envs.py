@@ -3,6 +3,10 @@ import os
 import gym
 import numpy as np
 import torch
+import typing
+if typing.TYPE_CHECKING:
+    from stable_baselines3.common.type_aliases import GymEnv
+from copy import deepcopy
 from gym.spaces.box import Box
 
 from stable_baselines3.common.monitor import Monitor
@@ -78,8 +82,10 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, log_dir=None,
     if no_obs_norm == False:
         if len(envs.observation_space.shape) == 1:
             if gamma is None:
+                #pass
                 envs = VecNormalize(envs, norm_obs=True, norm_reward=True)
             else:
+                #pass
                 envs = VecNormalize(envs, gamma=gamma)
 
     envs = VecPyTorch(envs, device)
@@ -317,3 +323,28 @@ def unwrap_wrapper(env, wrapper_class):
             return env_tmp
         env_tmp = env_tmp.env
     return None
+
+def get_vec_normalize(venv):
+    if isinstance(venv, VecNormalize):
+        return venv
+    elif hasattr(venv, 'venv'):
+        return get_vec_normalize(venv.venv)
+
+    return None
+
+# Define here to avoid circular import
+def sync_envs_normalization(env: "GymEnv", eval_env: "GymEnv") -> None:
+    """
+    Sync eval env and train env when using VecNormalize
+    :param env:
+    :param eval_env:
+    """
+    env_tmp, eval_env_tmp = env, eval_env
+    while isinstance(env_tmp, VecEnvWrapper):
+        if isinstance(env_tmp, VecNormalize):
+            # Only synchronize if observation normalization exists
+            if hasattr(env_tmp, "obs_rms"):
+                eval_env_tmp.obs_rms = deepcopy(env_tmp.obs_rms)
+            eval_env_tmp.ret_rms = deepcopy(env_tmp.ret_rms)
+        env_tmp = env_tmp.venv
+        eval_env_tmp = eval_env_tmp.venv
