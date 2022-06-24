@@ -7,6 +7,7 @@ import typing
 if typing.TYPE_CHECKING:
     from stable_baselines3.common.type_aliases import GymEnv
 from copy import deepcopy
+import pybullet_envs  
 from gym.spaces.box import Box
 
 from stable_baselines3.common.monitor import Monitor
@@ -42,6 +43,16 @@ def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=False):
             env = OneHotPartialObsWrapper(env)
             #env = RGBImgPartialObsWrapper(env)
             env = FlatObsWrapper(env)
+        if isinstance(env.action_space, gym.spaces.Box):
+        
+            env = gym.wrappers.ClipAction(env)
+            env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
+            #env = gym.wrappers.NormalizeReward(env)
+            #env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
+        env = gym.wrappers.NormalizeObservation(env)
+        # env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
+        # env = gym.wrappers.NormalizeReward(env)
+            #env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
         
         # if is_atari:
         #     if len(env.observation_space.shape) == 3:
@@ -82,8 +93,8 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, log_dir=None,
     if no_obs_norm == False:
         if len(envs.observation_space.shape) == 1:
             if gamma is None:
-                #pass
-                envs = VecNormalize(envs, norm_obs=True, norm_reward=True)
+                pass
+                #envs = VecNormalize(envs, norm_obs=True, norm_reward=True)
             else:
                 #pass
                 envs = VecNormalize(envs, gamma=gamma)

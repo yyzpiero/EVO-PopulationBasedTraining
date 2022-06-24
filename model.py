@@ -4,11 +4,13 @@ from torch.functional import Tensor
 import torch.nn as nn
 import torch.optim as optim
 from torch.distributions.categorical import Categorical
+from torch.distributions.normal import Normal
 from helper import layer_init
 
 class Agent(nn.Module):
-    def __init__(self, envs, hidden_size):
+    def __init__(self, envs, hidden_size, continous):
         super().__init__()
+        self.continous = continous
         self.critic = nn.Sequential(
             layer_init(nn.Linear(np.array(envs.observation_space.shape).prod(), hidden_size)),
             nn.Tanh(),
@@ -16,30 +18,58 @@ class Agent(nn.Module):
             nn.Tanh(),
             layer_init(nn.Linear(hidden_size, 1), std=1.0),
         )
-        self.actor = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.observation_space.shape).prod(), hidden_size)),
-            nn.Tanh(),
-            layer_init(nn.Linear(hidden_size, hidden_size)),
-            nn.Tanh(),
-            layer_init(nn.Linear(hidden_size, envs.action_space.n), std=0.01),
-        )
+        if not self.continous:
+            self.actor = nn.Sequential(
+                layer_init(nn.Linear(np.array(envs.observation_space.shape).prod(), hidden_size)),
+                nn.Tanh(),
+                layer_init(nn.Linear(hidden_size, hidden_size)),
+                nn.Tanh(),
+                layer_init(nn.Linear(hidden_size, envs.action_space.n), std=0.01),
+            )
+        else:
+            self.actor_mean = nn.Sequential(
+                layer_init(nn.Linear(np.array(envs.observation_space.shape).prod(), hidden_size)),
+                nn.Tanh(),
+                layer_init(nn.Linear(hidden_size, hidden_size)),
+                nn.Tanh(),
+                layer_init(nn.Linear(hidden_size, np.prod(envs.action_space.shape)), std=0.01),
+            )
+            self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.action_space.shape)))
+
 
     def get_value(self, x):
         return self.critic(x)
 
     def get_action_and_value(self, x, action=None):
-        logits = self.actor(x)
-        probs = Categorical(logits=logits)
-        if action is None:
-            action = probs.sample()
-        return action, probs.log_prob(action), probs.entropy(), self.critic(x)
+        if not self.continous:
+            logits = self.actor(x)
+            probs = Categorical(logits=logits)
+            if action is None:
+                action = probs.sample()
+            return action, probs.log_prob(action), probs.entropy(), self.critic(x)
+        else:
+            action_mean = self.actor_mean(x)
+            action_logstd = self.actor_logstd.expand_as(action_mean)
+            action_std = torch.exp(action_logstd)
+            probs = Normal(action_mean, action_std)
+            if action is None:
+                action = probs.sample()
+            return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(x)
 
     def act(self, x):
-        
-        logits = self.actor(x)
-        probs = Categorical(logits=logits)
-        action = probs.sample()
-        return action
+        if not self.continous:
+            logits = self.actor(x)
+            probs = Categorical(logits=logits)
+            action = probs.sample()
+            return action
+        else:
+            action_mean = self.actor_mean(x)
+            action_logstd = self.actor_logstd.expand_as(action_mean)
+            action_std = torch.exp(action_logstd)
+            probs = Normal(action_mean, action_std)
+            action = probs.sample()
+            return action
+
 
 
 class RolloutStorage:
@@ -106,7 +136,7 @@ class RolloutStorage:
             #returns = torch.zeros_like(self.rewards).to(device)
             for t in reversed(range(self.rewards.size(0))):
                 if t == self.rewards.size(0) - 1:
-                    nextnonterminal = 1.0 - self.next_done
+                    nextnonterminal = 1.0 - self.dones[t + 1]
                     next_return = next_value
                 else:
                     nextnonterminal = 1.0 - self.dones[t + 1]
@@ -123,6 +153,6 @@ class RolloutStorage:
         b_advantages = self.advantages.reshape(-1)
         b_returns = self.returns.reshape(-1)
         b_values = self.values.reshape(-1)
-
-        return b_obs[mb_inds], b_actions.long()[mb_inds], b_logprobs[mb_inds], b_values[mb_inds], b_advantages[mb_inds], b_returns[mb_inds]
+        
+        return b_obs[mb_inds], b_actions[mb_inds], b_logprobs[mb_inds], b_values[mb_inds], b_advantages[mb_inds], b_returns[mb_inds]
     

@@ -86,7 +86,13 @@ class rl_agent():
             self.env = env_create(env_name, idx)
             self.model = PPO("MlpPolicy", env=self.env, verbose=0, create_eval_env=True)
         else:
-            self.model =  PPO("MlpPolicy", env=env_name, verbose=0, create_eval_env=True)
+            if self.use_sb:
+                #self.env = env_create(env_name, idx)
+                self.env = make_vec_env(env_name, n_envs=num_envs)
+                self.model =  PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=False)
+            else:
+                #self.env = make_vec_env(env_name, n_envs=num_envs)
+                self.model = PPO(envs=env_name, device='cpu', num_envs=num_envs, verbose=0, create_eval_env=True)
         self.model.gamma = gamma
         self.model.learning_rate = learning_rate
         self.log_dir = os.path.join(log_dir, str(idx))

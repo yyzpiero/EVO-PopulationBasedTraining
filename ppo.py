@@ -22,16 +22,16 @@ class PPO():
                  num_envs=4, 
                  seed=142,
                  #actor_critic, 
-                 num_steps=128, 
-                 hidden_size=128, 
-                 update_epochs=4,
-                 num_minibatches=4,
+                 num_steps=2048, 
+                 hidden_size=64, 
+                 update_epochs=10,
+                 num_minibatches=32,
                  norm_adv=True,
                  clip_coef=0.2,
-                 ent_coef=0.01,
+                 ent_coef=0.0,
                  vf_coef=0.5,
                  max_grad_norm=0.5,
-                 learning_rate=2.5e-4, 
+                 learning_rate=3e-4, 
                  anneal_lr=False,
                  target_kl=None,  
                  #recompute_returns=False, 
@@ -66,14 +66,19 @@ class PPO():
         self.device = device
         self.num_minibatches = num_minibatches
         # Models
+        
         self.num_envs = num_envs 
+        
         if isinstance(envs, str):
             self.envs = make_vec_envs(env_name=envs, seed=seed, num_processes=self.num_envs)
         else:
             self.envs = envs
         
+
+        
         if isinstance(self.envs, VecEnv):
-            self.obs_rms = get_vec_normalize(self.envs).obs_rms
+            #self.obs_rms = get_vec_normalize(self.envs).obs_rms
+            self.obs_rms = None
         else:
             self.obs_rms = None
 
@@ -93,7 +98,9 @@ class PPO():
         self.observation_space_shape = self.envs.observation_space.shape
         self.action_space_shape = self.envs.action_space.shape
 
-        self.agent = Agent(self.envs, hidden_size).to(device)
+        self.continous = isinstance(self.envs.action_space, gym.spaces.Box)
+
+        self.agent = Agent(self.envs, hidden_size, self.continous).to(device)
         self.optimizer = optim.Adam(self.agent.parameters(), lr=self.learning_rate, eps=1e-5)
         self.rollouts = RolloutStorage(num_steps, num_envs=self.num_envs, observation_space_shape=self.observation_space_shape, 
                         action_space_shape=self.action_space_shape, device=self.device)
@@ -165,8 +172,11 @@ class PPO():
                     mb_inds = b_inds[start:end]
 
                     mb_obs, mb_actions, mb_logprobs, mb_values, mb_advantages, mb_returns = self.rollouts.mini_batch_generator(mb_inds)
+                    if not self.continous:
+                        _, newlogprob, entropy, newvalue = self.agent.get_action_and_value(mb_obs, mb_actions.long())
+                    else:
+                        _, newlogprob, entropy, newvalue = self.agent.get_action_and_value(mb_obs, mb_actions)
 
-                    _, newlogprob, entropy, newvalue = self.agent.get_action_and_value(mb_obs, mb_actions)
                     logratio = newlogprob - mb_logprobs
                     ratio = logratio.exp()
 
@@ -278,7 +288,7 @@ class PPO():
                             eval_episode_rewards.append(np.sum(episode_rewards))
                             eval_episode_length.append(episode_length)    
 
-        eval_envs.close()
+        #eval_envs.close()
         if self.verbose:
             print(" Evaluation using {} episodes: mean reward {:.5f} mean length {:.5f}\n".format(
                 len(eval_episode_rewards), np.mean(eval_episode_rewards), np.mean(eval_episode_length)))
