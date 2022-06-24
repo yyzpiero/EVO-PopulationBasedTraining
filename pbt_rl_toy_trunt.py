@@ -1,6 +1,8 @@
 import argparse
 import os
 import time
+from time import gmtime, strftime
+
 import numpy as np
 from distutils.util import strtobool
 from mpi_utils import MPI_Tool
@@ -89,7 +91,7 @@ class rl_agent():
             if self.use_sb:
                 #self.env = env_create(env_name, idx)
                 self.env = make_vec_env(env_name, n_envs=num_envs)
-                self.model =  PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=False)
+                self.model =  PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=True)
             else:
                 #self.env = make_vec_env(env_name, n_envs=num_envs)
                 self.model = PPO(envs=env_name, device='cpu', num_envs=num_envs, verbose=0, create_eval_env=True)
@@ -348,7 +350,8 @@ class base_engine(object):
 def main():
 
     args = parse_args()
-    run_name = f"{args.use_sb}_{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    now_time = strftime("%Y-%m-%d %H:%M", gmtime())
+    run_name = f"{args.use_sb}_{args.env_id}__{args.exp_name}__{args.seed}__{now_time}"
     workers = workers_init(args)
     #writer = args.track
     
@@ -360,10 +363,6 @@ def main():
         )
     else:
         writer = None
-
-
-
-
 
     num_generations = args.total_generations
     agent_training_steps = args.agent_training_steps

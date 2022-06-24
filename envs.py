@@ -93,8 +93,8 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, log_dir=None,
     if no_obs_norm == False:
         if len(envs.observation_space.shape) == 1:
             if gamma is None:
-                pass
-                #envs = VecNormalize(envs, norm_obs=True, norm_reward=True)
+                #pass
+                envs = VecNormalize(envs, norm_obs=True, norm_reward=False)
             else:
                 #pass
                 envs = VecNormalize(envs, gamma=gamma)

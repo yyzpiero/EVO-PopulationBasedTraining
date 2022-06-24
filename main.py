@@ -1,11 +1,16 @@
 
+from tabnanny import verbose
 from envs import make_vec_envs
 import argparse
 import os
 from distutils.util import strtobool
 import torch
 from ppo import PPO
+from stable_baselines3 import PPO as PPO_SB
+from stable_baselines3.common.env_util import make_vec_env as make_vec_envs_sb
+from stable_baselines3.common.evaluation import evaluate_policy
 import time
+import gym
 
 def parse_args():
     # fmt: off
@@ -18,7 +23,7 @@ def parse_args():
         help="if toggled, `torch.backends.cudnn.deterministic=False`")
     parser.add_argument("--cuda", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
         help="if toggled, cuda will be enabled by default")
-    parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
+    parser.add_argument("--track", type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="if toggled, this experiment will be tracked with tensorboard")
     # parser.add_argument("--wandb-project-name", type=str, default="cleanRL",
     #     help="the wandb's project name")
@@ -28,9 +33,9 @@ def parse_args():
     #     help="weather to capture videos of the agent performances (check out `videos` folder)")
 
     # Algorithm specific arguments
-    parser.add_argument("--env-id", type=str, default="nasim:HugeGen-v0",
+    parser.add_argument("--env-id", type=str, default="HalfCheetahBulletEnv-v0",
         help="the id of the environment")
-    parser.add_argument("--num-envs", type=int, default=5,
+    parser.add_argument("--num-envs", type=int, default=16,
         help="the number of parallel game environments")
     parser.add_argument("--no-obs-norm",type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="normali")
@@ -42,15 +47,24 @@ def parse_args():
 def main():
     args = parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
-    envs = make_vec_envs(args.env_id, args.seed, args.num_envs, args.gamma)
+    #envs = make_vec_envs(args.env_id, args.seed, args.num_envs, args.gamma)
+    envs = make_vec_envs_sb(args.env_id, n_envs=args.num_envs, seed=121)
+    #model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)
+    
+    model =  PPO_SB("MlpPolicy", env=envs, create_eval_env=True, verbose=0)
+    model.learn(total_timesteps=100000)
+    mean_reward, std_reward = evaluate_policy(model, gym.make(args.env_id), n_eval_episodes=10)
+    print(mean_reward)
 
-    model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)
-    #model.train(15000)
+    e_model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=0)
+    e_model.train(100000)
+    mean_reward, std_reward=e_model.eval(num_eval_episodes=10)
+    print(mean_reward)
     #model.eval(num_eval_episodes=2)
     #params = model.get_parameters()
     #model.set_parameters(params)
-    model.train(50000)
-    model.eval(num_eval_episodes=10)
+    #model.train(1000000)
+    #model.eval(num_eval_episodes=10)
 
 if __name__ == '__main__':
     since = time.time()
