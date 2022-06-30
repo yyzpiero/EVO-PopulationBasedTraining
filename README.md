@@ -36,7 +36,7 @@ Prerequisites:
 
 [^1]: Please use **cpu-only** version if possible, as most HPC clusters don't have GPUs
 
-Clone the repo: 
+Clone this repo: 
 
 ```
 git clone https://github.com/yyzpiero/evo.git
