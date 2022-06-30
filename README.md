@@ -22,7 +22,7 @@ To extend the population of agents to extreme-scale using High-Performance Compu
 
 ## MPI (Message Passing Interface) and mpi4py
 
-[Message passing interface (MPI)](https://en.wikipedia.org/wiki/Message_Passing_Interface) provides a powerful, efficient, and portable way to express parallel programs.  It is the dominant model used in [high-performance computing](https://en.wikipedia.org/wiki/High-performance_computing). 
+[Message passing interface (MPI)](https://en.wikipedia.org/wiki/Message_Passing_Interface) provides a powerful, efficient, and portable way to express parallel programs.  It is the dominant model used in [high-performance computing](https://en.wikipedia.org/wiki/High-performance_computing). MPI is a programmable communication protocol on parallel computing nodes, which supports point-to-point communication and collective communication. Socket and TCP protocol communication are used in the transport layer. It is the main communication method on distributed memory supercomputers, and it can also run on shared computers.
 
 [mpi4py](https://mpi4py.readthedocs.io/en/stable/) provides a Python interface that resembles the [message passing interface (MPI)](https://en.wikipedia.org/wiki/Message_Passing_Interface), and hence allows Python programs to exploit multiple processors on multiple compute nodes. 
 
