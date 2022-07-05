@@ -6,6 +6,9 @@ echo "bash run.sh LOG_PATH RANK_NUM TRACK"
 echo "For example: bash run.sh log 8 nasim:LargeGen-v0 True"
 echo "It is better to use the absolute path."
 echo "=============================================================================================================="
+
+source ~/anaconda3/etc/profile.d/conda.sh
+conda activate pytorch-cpu
 module load mpi
 LOG_PATH=$1
 export LOG_PATH=${LOG_PATH}
@@ -15,8 +18,8 @@ TRACK=$4
 
 now="$(date +"%I:%M")"
 export now=${now}
-agent_training_steps=25000
-total_generations=40
+agent_training_steps=50000
+total_generations=200
 EXEC_PATH=$(pwd)
 
 if [[ ! -e ${EXEC_PATH}/${LOG_PATH}/${ENV_ID} ]]; then

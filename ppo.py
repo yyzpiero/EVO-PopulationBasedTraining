@@ -22,18 +22,18 @@ class PPO():
                  num_envs=4, 
                  seed=12,
                  #actor_critic, 
-                 num_steps=512, 
-                 hidden_size=128, 
-                 update_epochs=10,
-                 num_minibatches=32,
+                 num_steps=128, 
+                 hidden_size=256, 
+                 update_epochs=4,
+                 num_minibatches=4,
                  norm_adv=True,
-                 clip_coef=0.2,
-                 ent_coef=0.0,
+                 clip_coef=0.1,
+                 ent_coef=0.01,
                  vf_coef=0.5,
                  max_grad_norm=0.5,
                  learning_rate=3e-4, 
                  anneal_lr=False,
-                 target_kl=0.03,  
+                 target_kl=None,  
                  #recompute_returns=False, 
                  tb_writer=None,
                  use_gae=True,
@@ -250,7 +250,7 @@ class PPO():
         #eval_envs = gym.make('CartPole-v0')
         #eval_envs.seed(23222)
         assert eval_envs is not None
-
+        eval_envs.training = False
         eval_episode_rewards = []
         eval_episode_length = []
         obs = eval_envs.reset()

@@ -34,7 +34,8 @@ class Agent(nn.Module):
                 nn.Tanh(),
                 layer_init(nn.Linear(hidden_size, np.prod(envs.action_space.shape)), std=0.01),
             )
-            self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.action_space.shape)))
+            self.actor_logstd = nn.Parameter(torch.ones(envs.action_space.shape) * 0.0, requires_grad=True)
+            #self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.action_space.shape)))
 
 
     def get_value(self, x):
@@ -50,10 +51,11 @@ class Agent(nn.Module):
         else:
             action_mean = self.actor_mean(x)
             action_logstd = self.actor_logstd.expand_as(action_mean)
-            action_std = torch.exp(action_logstd)
+            #action_std = torch.exp(action_logstd)
+            action_std = torch.ones_like(action_mean) * action_logstd.exp()
             probs = Normal(action_mean, action_std)
             if action is None:
-                action = probs.sample()
+                action = probs.rsample()
             return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(x)
 
     def act(self, x):

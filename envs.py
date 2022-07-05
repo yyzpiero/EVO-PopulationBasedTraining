@@ -76,7 +76,7 @@ def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=False):
 
     return _thunk
 
-def make_vec_envs(env_name, seed, num_processes, gamma=None, log_dir=None, 
+def make_vec_envs(env_name, seed, num_processes, gamma=None, sub_proc=False,log_dir=None, 
                   device="cpu", allow_early_resets=True, num_frame_stack=None,
                   no_obs_norm=False):
     envs = [
@@ -85,8 +85,10 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, log_dir=None,
     ]
 
     if len(envs) > 1:
-        #envs = SubprocVecEnv(envs)
-        envs = DummyVecEnv(envs)
+        if sub_proc:
+            envs = SubprocVecEnv(envs)
+        else:
+            envs = DummyVecEnv(envs)
     else:
         envs = DummyVecEnv(envs)
 
