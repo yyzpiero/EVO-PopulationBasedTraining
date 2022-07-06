@@ -46,10 +46,10 @@ def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=False):
         if isinstance(env.action_space, gym.spaces.Box):
         
             env = gym.wrappers.ClipAction(env)
-            env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
-            #env = gym.wrappers.NormalizeReward(env)
+            #env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
+            env = gym.wrappers.NormalizeReward(env)
             #env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
-        env = gym.wrappers.NormalizeObservation(env)
+        #env = gym.wrappers.NormalizeObservation(env)
         # env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
         # env = gym.wrappers.NormalizeReward(env)
             #env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
@@ -95,8 +95,8 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, sub_proc=False,log_
     if no_obs_norm == False:
         if len(envs.observation_space.shape) == 1:
             if gamma is None:
-                #pass
-                envs = VecNormalize(envs, norm_obs=True, norm_reward=False)
+                # pass
+                envs = VecNormalize(envs, norm_obs=True, norm_reward=True)
             else:
                 #pass
                 envs = VecNormalize(envs, gamma=gamma)
@@ -110,7 +110,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, sub_proc=False,log_
 
     return envs
 
-def make_eval_env(env_name, seed = 53, gamma=None, no_obs_norm=False):
+def make_eval_env(env_name, seed = 53, gamma=None, no_obs_norm=False, device="cpu"):
     envs = [make_env(env_name, seed, 0)]
     envs = DummyVecEnv(envs)
 
@@ -121,6 +121,7 @@ def make_eval_env(env_name, seed = 53, gamma=None, no_obs_norm=False):
             else:
                 envs = VecNormalize(envs, gamma=gamma)
 
+    envs = VecPyTorch(envs, device)
 
     return envs
 
@@ -358,6 +359,7 @@ def sync_envs_normalization(env: "GymEnv", eval_env: "GymEnv") -> None:
             # Only synchronize if observation normalization exists
             if hasattr(env_tmp, "obs_rms"):
                 eval_env_tmp.obs_rms = deepcopy(env_tmp.obs_rms)
+                print("OBS Copied")
             eval_env_tmp.ret_rms = deepcopy(env_tmp.ret_rms)
         env_tmp = env_tmp.venv
         eval_env_tmp = eval_env_tmp.venv

@@ -17,7 +17,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp-name", type=str, default=os.path.basename(__file__).rstrip(".py"),
         help="the name of this experiment")
-    parser.add_argument("--seed", type=int, default=123,
+    parser.add_argument("--seed", type=int, default=1223,
         help="seed of the experiment")
     parser.add_argument("--torch-deterministic", type=lambda x: bool(strtobool(x)), default=True, nargs="?", const=True,
         help="if toggled, `torch.backends.cudnn.deterministic=False`")
@@ -33,9 +33,9 @@ def parse_args():
     #     help="weather to capture videos of the agent performances (check out `videos` folder)")
 
     # Algorithm specific arguments
-    parser.add_argument("--env-id", type=str, default="HalfCheetahBulletEnv-v0",
+    parser.add_argument("--env-id", type=str, default="AntBulletEnv-v0",
         help="the id of the environment")
-    parser.add_argument("--num-envs", type=int, default=32,
+    parser.add_argument("--num-envs", type=int, default=8,
         help="the number of parallel game environments")
     parser.add_argument("--no-obs-norm",type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="normali")
@@ -51,13 +51,13 @@ def main():
     envs = make_vec_envs_sb(args.env_id, n_envs=args.num_envs, seed=121)
     #model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)
     
-    model =  PPO_SB("MlpPolicy", env=envs, create_eval_env=True, verbose=0)
-    model.learn(total_timesteps=50000)
-    mean_reward, std_reward = evaluate_policy(model, gym.make(args.env_id), n_eval_episodes=10)
-    print(mean_reward)
+    #model =  PPO_SB("MlpPolicy", env=envs, create_eval_env=True, verbose=0)
+    #model.learn(total_timesteps=50000)
+    #mean_reward, std_reward = evaluate_policy(model, gym.make(args.env_id), n_eval_episodes=10)
+    #print(mean_reward)
 
-    e_model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=0)
-    e_model.train(50000)
+    e_model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)
+    e_model.train(100000)
     mean_reward, std_reward=e_model.eval(num_eval_episodes=10)
     print(mean_reward)
     #model.eval(num_eval_episodes=2)

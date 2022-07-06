@@ -1,0 +1,71 @@
+--------------------------------------------------------------------------
+[[8047,1],0]: A high-performance Open MPI point-to-point messaging module
+was unable to find any relevant network interfaces:
+
+Module: OpenFabrics (openib)
+  Host: swai
+
+Another transport will be used instead, although this may result in
+lower performance.
+
+NOTE: You can disable this warning by setting the MCA parameter
+btl_base_warn_component_unused to 0.
+--------------------------------------------------------------------------
+/home/yangyizhou/software/miniconda3/envs/poetry-mpi/lib/python3.9/site-packages/nasim/envs/render.py:17: UserWarning: Unable to import Matplotlib with TkAgg backend due to following exception: "<class 'ImportError'> Cannot load backend 'TkAgg' which requires the 'tk' interactive framework, as 'headless' is currently running". NASIM can still run but GUI functionallity may not work as expected.
+  warnings.warn(
+/home/yangyizhou/software/miniconda3/envs/poetry-mpi/lib/python3.9/site-packages/nasim/envs/render.py:17: UserWarning: Unable to import Matplotlib with TkAgg backend due to following exception: "<class 'ImportError'> Cannot load backend 'TkAgg' which requires the 'tk' interactive framework, as 'headless' is currently running". NASIM can still run but GUI functionallity may not work as expected.
+  warnings.warn(
+/home/yangyizhou/software/miniconda3/envs/poetry-mpi/lib/python3.9/site-packages/nasim/envs/render.py:17: UserWarning: Unable to import Matplotlib with TkAgg backend due to following exception: "<class 'ImportError'> Cannot load backend 'TkAgg' which requires the 'tk' interactive framework, as 'headless' is currently running". NASIM can still run but GUI functionallity may not work as expected.
+  warnings.warn(
+/home/yangyizhou/software/miniconda3/envs/poetry-mpi/lib/python3.9/site-packages/nasim/envs/render.py:17: UserWarning: Unable to import Matplotlib with TkAgg backend due to following exception: "<class 'ImportError'> Cannot load backend 'TkAgg' which requires the 'tk' interactive framework, as 'headless' is currently running". NASIM can still run but GUI functionallity may not work as expected.
+  warnings.warn(
+/home/yangyizhou/software/miniconda3/envs/poetry-mpi/lib/python3.9/site-packages/nasim/envs/render.py:17: UserWarning: Unable to import Matplotlib with TkAgg backend due to following exception: "<class 'ImportError'> Cannot load backend 'TkAgg' which requires the 'tk' interactive framework, as 'headless' is currently running". NASIM can still run but GUI functionallity may not work as expected.
+  warnings.warn(
+/home/yangyizhou/software/miniconda3/envs/poetry-mpi/lib/python3.9/site-packages/nasim/envs/render.py:17: UserWarning: Unable to import Matplotlib with TkAgg backend due to following exception: "<class 'ImportError'> Cannot load backend 'TkAgg' which requires the 'tk' interactive framework, as 'headless' is currently running". NASIM can still run but GUI functionallity may not work as expected.
+  warnings.warn(
+/home/yangyizhou/software/miniconda3/envs/poetry-mpi/lib/python3.9/site-packages/nasim/envs/render.py:17: UserWarning: Unable to import Matplotlib with TkAgg backend due to following exception: "<class 'ImportError'> Cannot load backend 'TkAgg' which requires the 'tk' interactive framework, as 'headless' is currently running". NASIM can still run but GUI functionallity may not work as expected.
+  warnings.warn(
+/home/yangyizhou/software/miniconda3/envs/poetry-mpi/lib/python3.9/site-packages/nasim/envs/render.py:17: UserWarning: Unable to import Matplotlib with TkAgg backend due to following exception: "<class 'ImportError'> Cannot load backend 'TkAgg' which requires the 'tk' interactive framework, as 'headless' is currently running". NASIM can still run but GUI functionallity may not work as expected.
+  warnings.warn(
+/home/yangyizhou/software/miniconda3/envs/poetry-mpi/lib/python3.9/site-packages/nasim/envs/render.py:17: UserWarning: Unable to import Matplotlib with TkAgg backend due to following exception: "<class 'ImportError'> Cannot load backend 'TkAgg' which requires the 'tk' interactive framework, as 'headless' is currently running". NASIM can still run but GUI functionallity may not work as expected.
+  warnings.warn(
+/home/yangyizhou/software/miniconda3/envs/poetry-mpi/lib/python3.9/site-packages/nasim/envs/render.py:17: UserWarning: Unable to import Matplotlib with TkAgg backend due to following exception: "<class 'ImportError'> Cannot load backend 'TkAgg' which requires the 'tk' interactive framework, as 'headless' is currently running". NASIM can still run but GUI functionallity may not work as expected.
+  warnings.warn(
+Agent Number of [8] at rank 8
+[8] at rank 8
+Agents number: 1 at rank 8 on node swai
+Agent Number of [9] at rank 9
+[9] at rank 9
+Agents number: 1 at rank 9 on node swai
+Agent Number of [4] at rank 4
+[4] at rank 4
+Agents number: 1 at rank 4 on node swai
+Agent Number of [3] at rank 3
+[3] at rank 3
+Agents number: 1 at rank 3 on node swai
+Agent Number of [5] at rank 5
+[5] at rank 5
+Agents number: 1 at rank 5 on node swai
+Agent Number of [0] at rank 0
+[0] at rank 0
+Agent Number of [6] at rank 6
+[6] at rank 6
+Agents number: 1 at rank 6 on node swai
+Agent Number of [7] at rank 7
+[7] at rank 7
+Agents number: 1 at rank 7 on node swai
+Agent Number of [1] at rank 1
+[1] at rank 1
+Agents number: 1 at rank 1 on node swai
+Agent Number of [2] at rank 2
+[2] at rank 2
+Agents number: 1 at rank 2 on node swai
+[swai:00711] 9 more processes have sent help message help-mpi-btl-base.txt / btl:no-nics
+[swai:00711] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
+One Generation Time: 42.4686975479126
+One Generation Time: 41.73786926269531
+At itre 1 the Best Pop Score is -1453.2 Best Length is 1469.6 on rank 9
+One Generation Time: 41.33281755447388
+At itre 2 the Best Pop Score is -1981.8 Best Length is 2000.0 on rank 0
+One Generation Time: 41.01770877838135
+At itre 3 the Best Pop Score is -2000.8 Best Length is 2000.0 on rank 8
