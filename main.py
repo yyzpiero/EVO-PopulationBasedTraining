@@ -33,9 +33,9 @@ def parse_args():
     #     help="weather to capture videos of the agent performances (check out `videos` folder)")
 
     # Algorithm specific arguments
-    parser.add_argument("--env-id", type=str, default="AntBulletEnv-v0",
+    parser.add_argument("--env-id", type=str, default="InvertedDoublePendulumBulletEnv-v0",
         help="the id of the environment")
-    parser.add_argument("--num-envs", type=int, default=16,
+    parser.add_argument("--num-envs", type=int, default=8,
         help="the number of parallel game environments")
     parser.add_argument("--no-obs-norm",type=lambda x: bool(strtobool(x)), default=False, nargs="?", const=True,
         help="normali")
@@ -48,16 +48,16 @@ def main():
     args = parse_args()
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
     #envs = make_vec_envs(args.env_id, args.seed, args.num_envs, args.gamma)
-    envs = make_vec_envs_sb(args.env_id, n_envs=args.num_envs, seed=121)
+    envs = make_vec_envs_sb(args.env_id, n_envs=args.num_envs, seed=45821)
     #model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)
     
-    # model =  PPO_SB("MlpPolicy", env=envs, create_eval_env=True, verbose=1)
-    # model.learn(total_timesteps=100000)
+    # model =  PPO_SB("MlpPolicy", env=envs, create_eval_env=True, verbose=0)
+    # model.learn(total_timesteps=200000)
     # mean_reward, std_reward = evaluate_policy(model, gym.make(args.env_id), n_eval_episodes=10)
     # print(mean_reward)
 
     e_model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)
-    e_model.train(100000)
+    e_model.train(300000)
     mean_reward, std_reward=e_model.eval(num_eval_episodes=10)
     print(mean_reward)
     #model.eval(num_eval_episodes=2)

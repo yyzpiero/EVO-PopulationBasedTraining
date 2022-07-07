@@ -20,12 +20,12 @@ class PPO():
     def __init__(self, 
                  envs, 
                  num_envs=4, 
-                 seed=132,
+                 seed=45821,
                  #actor_critic, 
                  num_steps=2048, 
                  hidden_size=64, 
                  update_epochs=10,
-                 num_minibatches=32,
+                 num_minibatches=64,
                  norm_adv=True,
                  clip_coef=0.2,
                  ent_coef=0.0,
@@ -77,8 +77,10 @@ class PPO():
 
         
         if isinstance(self.envs, VecEnv):
-            self.obs_rms = get_vec_normalize(self.envs).obs_rms
-            # self.obs_rms = None
+            if get_vec_normalize(self.envs):
+                self.obs_rms = get_vec_normalize(self.envs).obs_rms
+            else:
+                self.obs_rms = None
         else:
             self.obs_rms = None
 
@@ -95,10 +97,16 @@ class PPO():
         else:
             self.verbose = False
         
-        self.observation_space_shape = self.envs.observation_space.shape
-        self.action_space_shape = self.envs.action_space.shape
+        
 
-        self.continous = isinstance(self.envs.action_space, gym.spaces.Box)
+        if isinstance(self.envs.venv, gym.vector.SyncVectorEnv):
+            self.observation_space_shape = self.envs.venv.single_observation_space.shape
+            self.action_space_shape = self.envs.venv.single_action_space.shape
+            self.continous = isinstance(self.envs.venv.single_action_space, gym.spaces.Box)
+        else:
+            self.observation_space_shape = self.envs.observation_space.shape
+            self.action_space_shape = self.envs.action_space.shape
+            self.continous = isinstance(self.envs.action_space, gym.spaces.Box)
 
         self.agent = Agent(self.envs, hidden_size, self.continous).to(device)
         self.optimizer = optim.Adam(self.agent.parameters(), lr=self.learning_rate, eps=1e-5)

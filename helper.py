@@ -3,10 +3,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from torch.distributions.categorical import Categorical
+from torch.distributions import Normal
 import functools
 from typing import Any, Dict
 
 
+def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
+    torch.nn.init.orthogonal_(layer.weight, std)
+    torch.nn.init.constant_(layer.bias, bias_const)
+    return layer
 
 def matrix_norm(v, axis=1):
     
@@ -302,10 +307,6 @@ class FixedBernoulli(torch.distributions.Bernoulli):
     def mode(self):
         return torch.gt(self.probs, 0.5).float()
 
-def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
-    torch.nn.init.orthogonal_(layer.weight, std)
-    torch.nn.init.constant_(layer.bias, bias_const)
-    return layer
 
 class Categorical(nn.Module):
     def __init__(self, num_inputs, num_outputs):
@@ -324,7 +325,8 @@ class DiagGaussian(nn.Module):
         super(DiagGaussian, self).__init__()
 
         self.fc_mean = layer_init(nn.Linear(num_inputs, num_outputs), std=0.01)
-        self.logstd = nn.Parameter(torch.ones(num_outputs) * 0.0, requires_grad=True)
+        #self.logstd = nn.Parameter(torch.ones(num_outputs) * 0.0, requires_grad=True)
+        self.logstd = nn.Parameter(torch.zeros(1, num_outputs), requires_grad=True)
 
     def forward(self, x):
         action_mean = self.fc_mean(x)

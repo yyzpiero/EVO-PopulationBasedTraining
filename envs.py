@@ -14,7 +14,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.atari_wrappers import NoopResetEnv, MaxAndSkipEnv, EpisodicLifeEnv, FireResetEnv, \
     WarpFrame, ClipRewardEnv
 from stable_baselines3.common.vec_env import VecEnvWrapper, DummyVecEnv, VecEnv, VecTransposeImage
-from stable_baselines3.common.vec_env.vec_normalize import VecNormalize #as VecNormalize_
+from stable_baselines3.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
 from envs_core import SubprocVecEnv
 from gym_minigrid.wrappers import *
 
@@ -30,6 +30,7 @@ def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=False):
         #     env = MaxAndSkipEnv(env, skip=4)
 
         env.seed(seed + rank)
+        env.action_space.seed(seed + rank)
 
         if str(env.__class__.__name__).find('TimeLimit') >= 0:
             env = TimeLimitMask(env)
@@ -38,7 +39,7 @@ def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=False):
             env = Monitor(env, os.path.join(log_dir, str(rank)),
                           allow_early_resets=allow_early_resets)
 
-            
+        env = gym.wrappers.RecordEpisodeStatistics(env)
         if is_minigrid:
             env = OneHotPartialObsWrapper(env)
             #env = RGBImgPartialObsWrapper(env)
@@ -48,7 +49,7 @@ def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=False):
             env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
             env = gym.wrappers.NormalizeReward(env)
             env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
-            #env = gym.wrappers.NormalizeObservation(env)
+            env = gym.wrappers.NormalizeObservation(env)
         #env = gym.wrappers.NormalizeObservation(env)
         # env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
         # env = gym.wrappers.NormalizeReward(env)
@@ -71,7 +72,7 @@ def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=False):
         # obs_shape = env.observation_space.shape
         # if len(obs_shape) == 3 and obs_shape[2] in [1, 3]:
         #     env = TransposeImage(env, op=[2, 0, 1])
-        env = gym.wrappers.RecordEpisodeStatistics(env)
+        
         return env
 
     return _thunk
@@ -88,18 +89,19 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, sub_proc=False,log_
         if sub_proc:
             envs = SubprocVecEnv(envs)
         else:
-            envs = DummyVecEnv(envs)
+            #envs = DummyVecEnv(envs)
+            envs = gym.vector.SyncVectorEnv(envs)
     else:
         envs = DummyVecEnv(envs)
 
     if no_obs_norm == False:
         if len(envs.observation_space.shape) == 1:
             if gamma is None:
-                # pass
-                envs = VecNormalize(envs, norm_obs=True, norm_reward=False)
+                pass
+                #envs = VecNormalize(envs, norm_obs=True, norm_reward=True)
             else:
-                #pass
-                envs = VecNormalize(envs, norm_obs=True, norm_reward=False)
+                pass
+                #envs = VecNormalize(envs, norm_obs=True, norm_reward=False)
                 #envs = VecNormalize(envs, gamma=gamma)
 
     envs = VecPyTorch(envs, device)
@@ -111,7 +113,7 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, sub_proc=False,log_
 
     return envs
 
-def make_eval_env(env_name, seed = 53, gamma=None, no_obs_norm=False, device="cpu"):
+def make_eval_env(env_name, seed = 45821, gamma=None, no_obs_norm=False, device="cpu"):
     envs = [make_env(env_name, seed, 0)]
     envs = DummyVecEnv(envs)
 
@@ -204,27 +206,27 @@ class VecPyTorch(VecEnvWrapper):
         return obs, reward, done, info
 
 
-# class VecNormalize(VecNormalize_):
-#     def __init__(self, *args, **kwargs):
-#         super(VecNormalize, self).__init__(*args, **kwargs)
-#         self.training = True
+class VecNormalize(VecNormalize_):
+    def __init__(self, *args, **kwargs):
+        super(VecNormalize, self).__init__(*args, **kwargs)
+        self.training = True
 
-#     def _obfilt(self, obs, update=True):
-#         if self.obs_rms:
-#             if self.training and update:
-#                 self.obs_rms.update(obs)
-#             obs = np.clip((obs - self.obs_rms.mean) /
-#                           np.sqrt(self.obs_rms.var + self.epsilon),
-#                           -self.clipob, self.clipob)
-#             return obs
-#         else:
-#             return obs
+    def _obfilt(self, obs, update=True):
+        if self.obs_rms:
+            if self.training and update:
+                self.obs_rms.update(obs)
+            obs = np.clip((obs - self.obs_rms.mean) /
+                          np.sqrt(self.obs_rms.var + self.epsilon),
+                          -self.clipob, self.clipob)
+            return obs
+        else:
+            return obs
 
-#     def train(self):
-#         self.training = True
+    def train(self):
+        self.training = True
 
-#     def eval(self):
-#         self.training = False
+    def eval(self):
+        self.training = False
 
 
 # Derived from

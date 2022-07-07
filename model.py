@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import gym
 from torch.functional import Tensor
 import torch.nn as nn
 import torch.optim as optim
@@ -11,8 +12,21 @@ class Agent(nn.Module):
     def __init__(self, envs, hidden_size, continous):
         super().__init__()
         self.continous = continous
+
+        if isinstance(envs.venv, gym.vector.SyncVectorEnv):
+            self.observation_shape = envs.venv.single_observation_space.shape
+            if not self.continous:
+                self.action_shape = envs.venv.single_action_space.n
+            else:
+                self.action_shape = envs.venv.single_action_space.shape
+        else:
+            self.observation_shape = envs.observation_space.shape
+            if not self.continous:
+                self.action_shape = envs.action_space.n
+            else:
+                self.action_shape = envs.action_space.shape
         self.critic = nn.Sequential(
-            layer_init(nn.Linear(np.array(envs.observation_space.shape).prod(), hidden_size)),
+            layer_init(nn.Linear(np.array(self.observation_shape).prod(), hidden_size)),
             nn.Tanh(),
             layer_init(nn.Linear(hidden_size, hidden_size)),
             nn.Tanh(),
@@ -20,25 +34,25 @@ class Agent(nn.Module):
         )
         if not self.continous:
             self.actor = nn.Sequential(
-                layer_init(nn.Linear(np.array(envs.observation_space.shape).prod(), hidden_size)),
+                layer_init(nn.Linear(np.array(self.observation_shape).prod(), hidden_size)),
                 nn.Tanh(),
                 layer_init(nn.Linear(hidden_size, hidden_size)),
                 nn.Tanh(),
-                layer_init(nn.Linear(hidden_size, envs.action_space.n), std=0.01),
+                layer_init(nn.Linear(hidden_size, self.action_shape), std=0.01),
             )
         else:
             self.actor_mean = nn.Sequential(
-                layer_init(nn.Linear(np.array(envs.observation_space.shape).prod(), hidden_size)),
+                layer_init(nn.Linear(np.array(self.observation_shape).prod(), hidden_size)),
                 nn.Tanh(),
                 layer_init(nn.Linear(hidden_size, hidden_size)),
                 nn.Tanh(),
-                layer_init(nn.Linear(hidden_size, hidden_size))
-                #layer_init(nn.Linear(hidden_size, np.prod(envs.action_space.shape)), std=0.01),
+                #layer_init(nn.Linear(hidden_size, hidden_size))
+                layer_init(nn.Linear(hidden_size, np.prod(self.action_shape)), std=0.01),
             )
             #self.actor_logstd = nn.Parameter(torch.ones(envs.action_space.shape) * 0.0, requires_grad=True)
-            #self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.action_space.shape)))
+            self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(self.action_shape)))
             #num_outputs = action_space.shape[0]
-            self.dist = DiagGaussian(hidden_size, np.prod(envs.action_space.shape))
+            self.dist = DiagGaussian(hidden_size, np.prod(self.action_shape))
 
 
     def get_value(self, x):
@@ -55,12 +69,15 @@ class Agent(nn.Module):
             action_mean = self.actor_mean(x)
             #action_logstd = self.actor_logstd.expand_as(action_mean)
             #action_std = torch.exp(action_logstd)
-            probs = self.dist(action_mean)
-            #action_std = torch.ones_like(action_mean) * self.actor_logstd.exp()
-            #probs = FixedNormal(action_mean, action_std)
+            #probs = self.dist(action_mean)
+            #
+            action_logstd = self.actor_logstd.expand_as(action_mean)
+            action_std = torch.exp(action_logstd)
+            probs = Normal(action_mean, action_std)
             if action is None:
-                action = probs.sample()
-            return action, probs.log_prob(action).sum(), probs.entropy().sum(), self.critic(x)
+                action = probs.rsample()
+            #return action, probs.log_prob(action).sum(), probs.entropy().sum(), self.critic(x)
+            return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(x)
 
     def act(self, x):
         if not self.continous:
@@ -72,12 +89,12 @@ class Agent(nn.Module):
             action_mean = self.actor_mean(x)
             #action_logstd = self.actor_logstd.expand_as(action_mean)
             #action_std = torch.exp(action_logstd)
-            #action_logstd = self.actor_logstd.expand_as(action_mean)
-            #action_std = torch.exp(action_logstd)
+            action_logstd = self.actor_logstd.expand_as(action_mean)
+            action_std = torch.exp(action_logstd)
             #action_std = torch.ones_like(action_mean) * self.actor_logstd.exp()
-            #probs = Normal(action_mean, action_std)
-            probs = self.dist(action_mean)
-            action = probs.sample()
+            probs = Normal(action_mean, action_std)
+            #probs = self.dist(action_mean)
+            action = probs.rsample()
             return action
 
 
@@ -114,8 +131,16 @@ class RolloutStorage:
         #self.advantages = self.advantages.to(device)
 
     def add_traj(self, next_obs, reward, done, value, action, logprob):
-        self.obs[self.step+1].copy_(next_obs)
-        self.rewards[self.step].copy_(reward.view(-1))
+        if isinstance(next_obs, np.ndarray):
+            self.obs[self.step+1].copy_(torch.from_numpy(next_obs).float())
+        else:
+            self.obs[self.step+1].copy_(next_obs)
+        
+        if isinstance(reward, np.ndarray):
+            self.rewards[self.step].copy_(torch.from_numpy(reward).float())
+        else:
+            self.rewards[self.step].copy_(reward.view(-1))
+               
         self.dones[self.step+1].copy_(torch.tensor(done))
         self.values[self.step].copy_(value.flatten())
         self.actions[self.step].copy_(action)
