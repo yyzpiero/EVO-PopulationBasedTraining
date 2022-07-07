@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.distributions.categorical import Categorical
 from torch.distributions.normal import Normal
-from helper import layer_init
+from helper import layer_init, FixedNormal, DiagGaussian
 
 class Agent(nn.Module):
     def __init__(self, envs, hidden_size, continous):
@@ -32,10 +32,13 @@ class Agent(nn.Module):
                 nn.Tanh(),
                 layer_init(nn.Linear(hidden_size, hidden_size)),
                 nn.Tanh(),
-                layer_init(nn.Linear(hidden_size, np.prod(envs.action_space.shape)), std=0.01),
+                layer_init(nn.Linear(hidden_size, hidden_size))
+                #layer_init(nn.Linear(hidden_size, np.prod(envs.action_space.shape)), std=0.01),
             )
-            self.actor_logstd = nn.Parameter(torch.ones(envs.action_space.shape) * 0.0, requires_grad=True)
+            #self.actor_logstd = nn.Parameter(torch.ones(envs.action_space.shape) * 0.0, requires_grad=True)
             #self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.action_space.shape)))
+            #num_outputs = action_space.shape[0]
+            self.dist = DiagGaussian(hidden_size, np.prod(envs.action_space.shape))
 
 
     def get_value(self, x):
@@ -50,13 +53,14 @@ class Agent(nn.Module):
             return action, probs.log_prob(action), probs.entropy(), self.critic(x)
         else:
             action_mean = self.actor_mean(x)
-            action_logstd = self.actor_logstd.expand_as(action_mean)
+            #action_logstd = self.actor_logstd.expand_as(action_mean)
             #action_std = torch.exp(action_logstd)
-            action_std = torch.ones_like(action_mean) * action_logstd.exp()
-            probs = Normal(action_mean, action_std)
+            probs = self.dist(action_mean)
+            #action_std = torch.ones_like(action_mean) * self.actor_logstd.exp()
+            #probs = FixedNormal(action_mean, action_std)
             if action is None:
-                action = probs.rsample()
-            return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(x)
+                action = probs.sample()
+            return action, probs.log_prob(action).sum(), probs.entropy().sum(), self.critic(x)
 
     def act(self, x):
         if not self.continous:
@@ -66,9 +70,13 @@ class Agent(nn.Module):
             return action
         else:
             action_mean = self.actor_mean(x)
-            action_logstd = self.actor_logstd.expand_as(action_mean)
-            action_std = torch.exp(action_logstd)
-            probs = Normal(action_mean, action_std)
+            #action_logstd = self.actor_logstd.expand_as(action_mean)
+            #action_std = torch.exp(action_logstd)
+            #action_logstd = self.actor_logstd.expand_as(action_mean)
+            #action_std = torch.exp(action_logstd)
+            #action_std = torch.ones_like(action_mean) * self.actor_logstd.exp()
+            #probs = Normal(action_mean, action_std)
+            probs = self.dist(action_mean)
             action = probs.sample()
             return action
 

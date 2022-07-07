@@ -9,3 +9,10 @@ utils/__pycache__/__init__.cpython-38.pyc
 utils/__pycache__/__init__.cpython-39.pyc
 utils/__pycache__/rl_tools.cpython-38.pyc
 utils/__pycache__/rl_tools.cpython-39.pyc
+log/AntBulletEnv-v0/EVO_num_agent_10_gen_20_num_step_50000_12:03.out
+log/AntBulletEnv-v0/EVO_num_agent_10_gen_20_num_step_50000_12:04.out
+log/AntBulletEnv-v0/EVO_num_agent_20_gen_10_num_step_200000_12:44.out
+log/AntBulletEnv-v0/SB_num_agent_10_gen_20_num_step_50000_12:03.out
+log/AntBulletEnv-v0/SB_num_agent_10_gen_20_num_step_50000_12:04.out
+log/AntBulletEnv-v0/SB_num_agent_20_gen_10_num_step_200000_12:44.out
+.gitignore

@@ -84,14 +84,14 @@ class rl_agent():
         elif env_name[0:6] == "dm2gym":
             self.env = env_create(env_name, idx)
             self.model = PPO("MultiInputPolicy", env=self.env, verbose=0, create_eval_env=True)
-        elif env_name[0:3] == "Ant":
-            self.env = env_create(env_name, idx)
-            self.model = PPO("MlpPolicy", env=self.env, verbose=0, create_eval_env=True)
+        # elif env_name[0:3] == "Ant":
+        #     self.env = env_create(env_name, idx)
+        #     self.model = PPO("MlpPolicy", env=self.env, verbose=0, create_eval_env=True)
         else:
             if self.use_sb:
                 #self.env = env_create(env_name, idx)
                 self.env = make_vec_env(env_name, n_envs=num_envs)
-                self.model =  PPO_SB("MlpPolicy", env=self.env, verbose=0, create_eval_env=True)
+                self.model =  PPO_SB("MlpPolicy", device='cpu',env=self.env, verbose=0, create_eval_env=True)
             else:
                 #self.env = make_vec_env(env_name, n_envs=num_envs)
                 self.model = PPO(envs=env_name, device='cpu', num_envs=num_envs, verbose=0, create_eval_env=True)

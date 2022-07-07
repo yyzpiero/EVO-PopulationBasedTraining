@@ -20,15 +20,15 @@ class PPO():
     def __init__(self, 
                  envs, 
                  num_envs=4, 
-                 seed=12,
+                 seed=132,
                  #actor_critic, 
-                 num_steps=128, 
-                 hidden_size=256, 
-                 update_epochs=4,
-                 num_minibatches=4,
+                 num_steps=2048, 
+                 hidden_size=64, 
+                 update_epochs=10,
+                 num_minibatches=32,
                  norm_adv=True,
-                 clip_coef=0.1,
-                 ent_coef=0.01,
+                 clip_coef=0.2,
+                 ent_coef=0.0,
                  vf_coef=0.5,
                  max_grad_norm=0.5,
                  learning_rate=3e-4, 
@@ -246,7 +246,7 @@ class PPO():
     def eval(self, obs_rms=None, num_eval_episodes=5, eval_envs=None):
         
         eval_envs = VecPyTorch(VecNormalize(self._get_eval_env(eval_env=eval_envs)), self.deivce)
-        eval_envs.seed = 3424
+        #eval_envs.seed = 3424
         sync_envs_normalization(self.envs, eval_envs)
         #eval_envs = gym.make('CartPole-v0')
         #eval_envs.seed(23222)

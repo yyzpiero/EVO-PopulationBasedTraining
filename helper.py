@@ -6,10 +6,7 @@ from torch.distributions.categorical import Categorical
 import functools
 from typing import Any, Dict
 
-def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
-    torch.nn.init.orthogonal_(layer.weight, std)
-    torch.nn.init.constant_(layer.bias, bias_const)
-    return layer
+
 
 def matrix_norm(v, axis=1):
     
@@ -243,6 +240,114 @@ class CategoricalMasked(Categorical):
         p_log_p = torch.where(self.masks, p_log_p, torch.tensor(0.0).to(self.device))
         return -p_log_p.sum(-1)
 
+class AddBias(nn.Module):
+    def __init__(self, bias):
+        super(AddBias, self).__init__()
+        self._bias = nn.Parameter(bias.unsqueeze(1))
+
+    def forward(self, x):
+        if x.dim() == 2:
+            bias = self._bias.t().view(1, -1)
+        else:
+            bias = self._bias.t().view(1, -1, 1, 1)
+
+        return x + bias
+
+"""
+Modify standard PyTorch distributions so they are compatible with this code.
+"""
+
+#
+# Standardize distribution interfaces
+#
+
+# Categorical
+class FixedCategorical(torch.distributions.Categorical):
+    def sample(self):
+        return super().sample().unsqueeze(-1)
+
+    def log_probs(self, actions):
+        return (
+            super()
+            .log_prob(actions.squeeze(-1))
+            .view(actions.size(0), -1)
+            .sum(-1)
+            .unsqueeze(-1)
+        )
+
+    def mode(self):
+        return self.probs.argmax(dim=-1, keepdim=True)
+
+
+# Normal
+class FixedNormal(torch.distributions.Normal):
+    def log_probs(self, actions):
+        return super().log_prob(actions).sum(-1, keepdim=True)
+
+    def entropy(self):
+        return super().entropy().sum(-1)
+
+    def mode(self):
+        return self.mean
+
+
+# Bernoulli
+class FixedBernoulli(torch.distributions.Bernoulli):
+    def log_probs(self, actions):
+        return super.log_prob(actions).view(actions.size(0), -1).sum(-1).unsqueeze(-1)
+
+    def entropy(self):
+        return super().entropy().sum(-1)
+
+    def mode(self):
+        return torch.gt(self.probs, 0.5).float()
+
+def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
+    torch.nn.init.orthogonal_(layer.weight, std)
+    torch.nn.init.constant_(layer.bias, bias_const)
+    return layer
+
+class Categorical(nn.Module):
+    def __init__(self, num_inputs, num_outputs):
+        super(Categorical, self).__init__()
+
+     
+        self.linear = layer_init(nn.Linear(num_inputs, num_outputs))
+
+    def forward(self, x):
+        x = self.linear(x)
+        return FixedCategorical(logits=x)
+
+
+class DiagGaussian(nn.Module):
+    def __init__(self, num_inputs, num_outputs):
+        super(DiagGaussian, self).__init__()
+
+        self.fc_mean = layer_init(nn.Linear(num_inputs, num_outputs), std=0.01)
+        self.logstd = nn.Parameter(torch.ones(num_outputs) * 0.0, requires_grad=True)
+
+    def forward(self, x):
+        action_mean = self.fc_mean(x)
+
+        # #  An ugly hack for my KFAC implementation.
+        # zeros = torch.zeros(action_mean.size())
+        # if x.is_cuda:
+        #     zeros = zeros.cuda()
+
+        #action_logstd = self.logstd(zeros)
+        action_std = torch.ones_like(action_mean) * self.logstd.exp()
+        return FixedNormal(action_mean, action_std)
+
+
+class Bernoulli(nn.Module):
+    def __init__(self, num_inputs, num_outputs):
+        super(Bernoulli, self).__init__()
+
+        self.linear = layer_init(nn.Linear(num_inputs, num_outputs))
+
+    def forward(self, x):
+        x = self.linear(x)
+        return FixedBernoulli(logits=x)
 
 
 def recursive_getattr(obj: Any, attr: str, *args) -> Any:

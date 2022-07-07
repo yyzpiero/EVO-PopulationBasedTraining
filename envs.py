@@ -14,7 +14,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.atari_wrappers import NoopResetEnv, MaxAndSkipEnv, EpisodicLifeEnv, FireResetEnv, \
     WarpFrame, ClipRewardEnv
 from stable_baselines3.common.vec_env import VecEnvWrapper, DummyVecEnv, VecEnv, VecTransposeImage
-from stable_baselines3.common.vec_env.vec_normalize import VecNormalize as VecNormalize_
+from stable_baselines3.common.vec_env.vec_normalize import VecNormalize #as VecNormalize_
 from envs_core import SubprocVecEnv
 from gym_minigrid.wrappers import *
 
@@ -44,11 +44,11 @@ def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=False):
             #env = RGBImgPartialObsWrapper(env)
             env = FlatObsWrapper(env)
         if isinstance(env.action_space, gym.spaces.Box):
-        
             env = gym.wrappers.ClipAction(env)
-            #env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
+            env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
             env = gym.wrappers.NormalizeReward(env)
-            #env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
+            env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
+            #env = gym.wrappers.NormalizeObservation(env)
         #env = gym.wrappers.NormalizeObservation(env)
         # env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
         # env = gym.wrappers.NormalizeReward(env)
@@ -96,10 +96,11 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, sub_proc=False,log_
         if len(envs.observation_space.shape) == 1:
             if gamma is None:
                 # pass
-                envs = VecNormalize(envs, norm_obs=True, norm_reward=True)
+                envs = VecNormalize(envs, norm_obs=True, norm_reward=False)
             else:
                 #pass
-                envs = VecNormalize(envs, gamma=gamma)
+                envs = VecNormalize(envs, norm_obs=True, norm_reward=False)
+                #envs = VecNormalize(envs, gamma=gamma)
 
     envs = VecPyTorch(envs, device)
 
@@ -203,27 +204,27 @@ class VecPyTorch(VecEnvWrapper):
         return obs, reward, done, info
 
 
-class VecNormalize(VecNormalize_):
-    def __init__(self, *args, **kwargs):
-        super(VecNormalize, self).__init__(*args, **kwargs)
-        self.training = True
+# class VecNormalize(VecNormalize_):
+#     def __init__(self, *args, **kwargs):
+#         super(VecNormalize, self).__init__(*args, **kwargs)
+#         self.training = True
 
-    def _obfilt(self, obs, update=True):
-        if self.obs_rms:
-            if self.training and update:
-                self.obs_rms.update(obs)
-            obs = np.clip((obs - self.obs_rms.mean) /
-                          np.sqrt(self.obs_rms.var + self.epsilon),
-                          -self.clipob, self.clipob)
-            return obs
-        else:
-            return obs
+#     def _obfilt(self, obs, update=True):
+#         if self.obs_rms:
+#             if self.training and update:
+#                 self.obs_rms.update(obs)
+#             obs = np.clip((obs - self.obs_rms.mean) /
+#                           np.sqrt(self.obs_rms.var + self.epsilon),
+#                           -self.clipob, self.clipob)
+#             return obs
+#         else:
+#             return obs
 
-    def train(self):
-        self.training = True
+#     def train(self):
+#         self.training = True
 
-    def eval(self):
-        self.training = False
+#     def eval(self):
+#         self.training = False
 
 
 # Derived from

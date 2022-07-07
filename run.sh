@@ -18,8 +18,8 @@ TRACK=$4
 
 now="$(date +"%I:%M")"
 export now=${now}
-agent_training_steps=50000
-total_generations=20
+agent_training_steps=200000
+total_generations=10
 EXEC_PATH=$(pwd)
 
 if [[ ! -e ${EXEC_PATH}/${LOG_PATH}/${ENV_ID} ]]; then
