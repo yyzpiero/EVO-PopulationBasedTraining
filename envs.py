@@ -30,6 +30,7 @@ def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=False):
         #     env = MaxAndSkipEnv(env, skip=4)
 
         env.seed(seed + rank)
+        env.observation_space.seed(seed + rank)
         env.action_space.seed(seed + rank)
 
         if str(env.__class__.__name__).find('TimeLimit') >= 0:
@@ -44,12 +45,12 @@ def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=False):
             env = OneHotPartialObsWrapper(env)
             #env = RGBImgPartialObsWrapper(env)
             env = FlatObsWrapper(env)
-        if isinstance(env.action_space, gym.spaces.Box):
-            env = gym.wrappers.ClipAction(env)
-            env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
-            env = gym.wrappers.NormalizeReward(env)
-            env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
-            env = gym.wrappers.NormalizeObservation(env)
+        # if isinstance(env.action_space, gym.spaces.Box):
+        #     env = gym.wrappers.ClipAction(env)
+        #     env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
+        #     env = gym.wrappers.NormalizeReward(env)
+        #     env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
+        #     env = gym.wrappers.NormalizeObservation(env)
         #env = gym.wrappers.NormalizeObservation(env)
         # env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
         # env = gym.wrappers.NormalizeReward(env)
@@ -89,16 +90,16 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, sub_proc=False,log_
         if sub_proc:
             envs = SubprocVecEnv(envs)
         else:
-            #envs = DummyVecEnv(envs)
-            envs = gym.vector.SyncVectorEnv(envs)
+            envs = DummyVecEnv(envs)
+            #envs = gym.vector.SyncVectorEnv(envs)
     else:
         envs = DummyVecEnv(envs)
 
     if no_obs_norm == False:
         if len(envs.observation_space.shape) == 1:
             if gamma is None:
-                pass
-                #envs = VecNormalize(envs, norm_obs=True, norm_reward=True)
+                #pass
+                envs = VecNormalize(envs, norm_obs=True, norm_reward=True)
             else:
                 pass
                 #envs = VecNormalize(envs, norm_obs=True, norm_reward=False)

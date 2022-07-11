@@ -33,7 +33,7 @@ def parse_args():
     #     help="weather to capture videos of the agent performances (check out `videos` folder)")
 
     # Algorithm specific arguments
-    parser.add_argument("--env-id", type=str, default="InvertedDoublePendulumBulletEnv-v0",
+    parser.add_argument("--env-id", type=str, default="AntBulletEnv-v0",
         help="the id of the environment")
     parser.add_argument("--num-envs", type=int, default=8,
         help="the number of parallel game environments")
@@ -56,8 +56,8 @@ def main():
     # mean_reward, std_reward = evaluate_policy(model, gym.make(args.env_id), n_eval_episodes=10)
     # print(mean_reward)
 
-    e_model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)
-    e_model.train(300000)
+    e_model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)#, num_steps=256, update_epochs=4, num_minibatches=4, ent_coef=0.02)
+    e_model.train(500000)
     mean_reward, std_reward=e_model.eval(num_eval_episodes=10)
     print(mean_reward)
     #model.eval(num_eval_episodes=2)

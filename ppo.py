@@ -254,6 +254,7 @@ class PPO():
     def eval(self, obs_rms=None, num_eval_episodes=5, eval_envs=None):
         
         eval_envs = VecPyTorch(VecNormalize(self._get_eval_env(eval_env=eval_envs)), self.deivce)
+        #eval_envs = VecPyTorch(self._get_eval_env(eval_env=eval_envs), self.deivce)
         #eval_envs.seed = 3424
         sync_envs_normalization(self.envs, eval_envs)
         #eval_envs = gym.make('CartPole-v0')
