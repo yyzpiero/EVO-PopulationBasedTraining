@@ -19,9 +19,9 @@ from envs_core import SubprocVecEnv
 from gym_minigrid.wrappers import *
 
 
-def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=False):
+def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=True, is_training=True):
     def _thunk():
-        
+        _training = is_training
         env = gym.make(env_id)
         is_minigrid = env_id[0:8] == "MiniGrid"
         # is_atari = hasattr(gym.envs, 'atari') and isinstance(env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
@@ -45,7 +45,7 @@ def make_env(env_id, seed, rank, log_dir=None, allow_early_resets=False):
             env = OneHotPartialObsWrapper(env)
             #env = RGBImgPartialObsWrapper(env)
             env = FlatObsWrapper(env)
-        # if isinstance(env.action_space, gym.spaces.Box):
+        # if isinstance(env.action_space, gym.spaces.Box) and _training:
         #     env = gym.wrappers.ClipAction(env)
         #     env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
         #     env = gym.wrappers.NormalizeReward(env)
@@ -101,8 +101,8 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, sub_proc=False,log_
                 #pass
                 envs = VecNormalize(envs, norm_obs=True, norm_reward=True)
             else:
-                pass
-                #envs = VecNormalize(envs, norm_obs=True, norm_reward=False)
+                #pass
+                envs = VecNormalize(envs, norm_obs=True, norm_reward=False)
                 #envs = VecNormalize(envs, gamma=gamma)
 
     envs = VecPyTorch(envs, device)
@@ -115,13 +115,13 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, sub_proc=False,log_
     return envs
 
 def make_eval_env(env_name, seed = 45821, gamma=None, no_obs_norm=False, device="cpu"):
-    envs = [make_env(env_name, seed, 0)]
+    envs = [make_env(env_name, seed, 0, allow_early_resets=True, is_training=False)]
     envs = DummyVecEnv(envs)
 
     if no_obs_norm == False:
         if len(envs.observation_space.shape) == 1:
             if gamma is None:
-                envs = VecNormalize(envs, norm_obs=True, norm_reward=True)
+                envs = VecNormalize(envs)
             else:
                 envs = VecNormalize(envs, gamma=gamma)
 

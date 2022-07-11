@@ -23,9 +23,9 @@ class PPO():
                  seed=45821,
                  #actor_critic, 
                  num_steps=2048, 
-                 hidden_size=64, 
+                 hidden_size=128, 
                  update_epochs=10,
-                 num_minibatches=64,
+                 num_minibatches=32,
                  norm_adv=True,
                  clip_coef=0.2,
                  ent_coef=0.0,
@@ -86,7 +86,7 @@ class PPO():
 
         if create_eval_env:
             if isinstance(envs, str):
-                self.eval_env = copy.deepcopy(make_eval_env(env_name=envs, seed=seed).unwrapped.envs[0])
+                self.eval_env = make_eval_env(env_name=envs, seed=seed, device=self.deivce)
             else:
                 self.eval_env = copy.deepcopy(self.envs.unwrapped.envs[0])
         else:
@@ -96,8 +96,7 @@ class PPO():
             self.verbose = True
         else:
             self.verbose = False
-        
-        
+              
 
         if isinstance(self.envs.venv, gym.vector.SyncVectorEnv):
             self.observation_space_shape = self.envs.venv.single_observation_space.shape
@@ -252,8 +251,10 @@ class PPO():
         return self.agent.act(obs)
 
     def eval(self, obs_rms=None, num_eval_episodes=5, eval_envs=None):
-        
-        eval_envs = VecPyTorch(VecNormalize(self._get_eval_env(eval_env=eval_envs)), self.deivce)
+        if self.eval_env:
+            eval_envs = self.eval_env
+        else:
+            eval_envs = VecPyTorch(VecNormalize(self._get_eval_env(eval_env=self.eval_env)), self.deivce)
         #eval_envs = VecPyTorch(self._get_eval_env(eval_env=eval_envs), self.deivce)
         #eval_envs.seed = 3424
         sync_envs_normalization(self.envs, eval_envs)

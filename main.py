@@ -57,7 +57,7 @@ def main():
     # print(mean_reward)
 
     e_model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)#, num_steps=256, update_epochs=4, num_minibatches=4, ent_coef=0.02)
-    e_model.train(500000)
+    e_model.train(400000)
     mean_reward, std_reward=e_model.eval(num_eval_episodes=10)
     print(mean_reward)
     #model.eval(num_eval_episodes=2)
