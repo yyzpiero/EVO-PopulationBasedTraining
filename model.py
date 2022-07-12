@@ -49,10 +49,10 @@ class Agent(nn.Module):
                 #layer_init(nn.Linear(hidden_size, hidden_size))
                 layer_init(nn.Linear(hidden_size, np.prod(self.action_shape)), std=0.01),
             )
-            #self.actor_logstd = nn.Parameter(torch.ones(envs.action_space.shape) * 0.0, requires_grad=True)
-            self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(self.action_shape)))
+            self.actor_logstd = nn.Parameter(torch.ones(envs.action_space.shape) * 0.0, requires_grad=True)
+            #self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(self.action_shape)))
             #num_outputs = action_space.shape[0]
-            self.dist = DiagGaussian(hidden_size, np.prod(self.action_shape))
+            #self.dist = DiagGaussian(hidden_size, np.prod(self.action_shape))
 
 
     def get_value(self, x):

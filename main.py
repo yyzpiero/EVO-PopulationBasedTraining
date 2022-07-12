@@ -51,13 +51,13 @@ def main():
     envs = make_vec_envs_sb(args.env_id, n_envs=args.num_envs, seed=45821)
     #model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)
     
-    # model =  PPO_SB("MlpPolicy", env=envs, create_eval_env=True, verbose=0)
-    # model.learn(total_timesteps=200000)
+    model =  PPO_SB("MlpPolicy", env=envs, create_eval_env=True, verbose=0)
+    # model.learn(total_timesteps=400000)
     # mean_reward, std_reward = evaluate_policy(model, gym.make(args.env_id), n_eval_episodes=10)
     # print(mean_reward)
 
-    e_model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)#, num_steps=256, update_epochs=4, num_minibatches=4, ent_coef=0.02)
-    e_model.train(400000)
+    e_model = PPO(envs=args.env_id, device=device, num_envs=args.num_envs, verbose=1)#,  num_steps=256, update_epochs=4, num_minibatches=4, ent_coef=0.02)
+    e_model.train(120000)
     mean_reward, std_reward=e_model.eval(num_eval_episodes=10)
     print(mean_reward)
     #model.eval(num_eval_episodes=2)

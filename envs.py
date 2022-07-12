@@ -100,9 +100,11 @@ def make_vec_envs(env_name, seed, num_processes, gamma=None, sub_proc=False,log_
             if gamma is None:
                 #pass
                 envs = VecNormalize(envs, norm_obs=True, norm_reward=True)
+                envs.training = True
             else:
                 #pass
                 envs = VecNormalize(envs, norm_obs=True, norm_reward=False)
+                envs.training = True
                 #envs = VecNormalize(envs, gamma=gamma)
 
     envs = VecPyTorch(envs, device)
@@ -124,7 +126,8 @@ def make_eval_env(env_name, seed = 45821, gamma=None, no_obs_norm=False, device=
                 envs = VecNormalize(envs)
             else:
                 envs = VecNormalize(envs, gamma=gamma)
-
+    
+    envs.training = False
     envs = VecPyTorch(envs, device)
 
     return envs

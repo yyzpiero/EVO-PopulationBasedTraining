@@ -4,6 +4,7 @@ import torch.optim as optim
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from typing import Any, Dict, Union, Tuple, List
 from stable_baselines3.common.save_util import load_from_zip_file
 from stable_baselines3.common.vec_env import VecEnvWrapper, DummyVecEnv, VecEnv, VecTransposeImage
@@ -23,16 +24,16 @@ class PPO():
                  seed=45821,
                  #actor_critic, 
                  num_steps=2048, 
-                 hidden_size=128, 
+                 hidden_size=64, 
                  update_epochs=10,
-                 num_minibatches=32,
+                 num_minibatches=64,
                  norm_adv=True,
                  clip_coef=0.2,
                  ent_coef=0.0,
                  vf_coef=0.5,
                  max_grad_norm=0.5,
                  learning_rate=3e-4, 
-                 anneal_lr=False,
+                 anneal_lr=True,
                  target_kl=None,  
                  #recompute_returns=False, 
                  tb_writer=None,
@@ -73,8 +74,6 @@ class PPO():
             self.envs = make_vec_envs(env_name=envs, seed=seed, num_processes=self.num_envs)
         else:
             self.envs = envs
-        
-
         
         if isinstance(self.envs, VecEnv):
             if get_vec_normalize(self.envs):
@@ -198,24 +197,28 @@ class PPO():
                         mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
 
                     # Policy loss
-                    pg_loss1 = -mb_advantages * ratio
-                    pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - self.clip_coef, 1 + self.clip_coef)
-                    pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+                    pg_loss1 = mb_advantages * ratio
+                    pg_loss2 = mb_advantages * torch.clamp(ratio, 1 - self.clip_coef, 1 + self.clip_coef)
+                    pg_loss = -torch.min(pg_loss1, pg_loss2).mean()
 
                     # Value loss
                     newvalue = newvalue.view(-1)
                     if self.clip_vloss:
-                        v_loss_unclipped = (newvalue - mb_returns) ** 2
+                        #v_loss_unclipped = (newvalue - mb_returns) ** 2
+                        v_loss_unclipped = F.mse_loss(newvalue, mb_returns)
                         v_clipped = mb_values + torch.clamp(
                             newvalue - mb_values,
                             -self.clip_coef,
                             self.clip_coef,
                         )
-                        v_loss_clipped = (v_clipped - mb_returns) ** 2
+                        #v_loss_clipped = (v_clipped - mb_returns) ** 2
+                        v_loss_clipped = F.mse_loss(v_clipped, mb_returns)
                         v_loss_max = torch.max(v_loss_unclipped, v_loss_clipped)
-                        v_loss = 0.5 * v_loss_max.mean()
+                        v_loss = v_loss_max
+                        #v_loss = 0.5 * v_loss_max.mean()
                     else:
-                        v_loss = 0.5 * ((newvalue - mb_returns) ** 2).mean()
+                        #v_loss = 0.5 * ((newvalue - mb_returns) ** 2).mean()
+                        v_loss = F.mse_loss(newvalue, mb_returns)
 
                     entropy_loss = entropy.mean()
                     loss = pg_loss - self.ent_coef * entropy_loss + v_loss * self.vf_coef
@@ -255,13 +258,14 @@ class PPO():
             eval_envs = self.eval_env
         else:
             eval_envs = VecPyTorch(VecNormalize(self._get_eval_env(eval_env=self.eval_env)), self.deivce)
+            eval_envs.training = False
         #eval_envs = VecPyTorch(self._get_eval_env(eval_env=eval_envs), self.deivce)
         #eval_envs.seed = 3424
         sync_envs_normalization(self.envs, eval_envs)
         #eval_envs = gym.make('CartPole-v0')
         #eval_envs.seed(23222)
         assert eval_envs is not None
-        eval_envs.training = False
+        #eval_envs.training = False
         eval_episode_rewards = []
         eval_episode_length = []
         obs = eval_envs.reset()
